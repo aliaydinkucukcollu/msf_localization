@@ -1,0 +1,25 @@
+/**:
+  ros__parameters:
+
+    # select a Kalman Filter from supported options
+    filter_type: "LKF" # options: LKF
+
+    # topics
+
+    # subscribed topics
+    gnss_topic: "/fix"
+    imu_topic: "/imu/data"
+
+    # published topics
+    odometry_topic: "/filter/odometry"
+    trajectory_topic: "/filter/trajectory"
+    fused_gnss_topic: "/filter/fix"
+
+    # frames
+    world_frame: "earth"
+    map_frame: "map"
+    body_frame: "base_link"
+
+    # datum: initial Geodetic point (lat, lon, h)
+    use_datum: false
+    datum: [38.43886389, 27.25458333, 0.0]
