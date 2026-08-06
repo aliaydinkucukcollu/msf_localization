@@ -29,14 +29,14 @@ public:
   /**
    * @brief Performs prediction step for Kalman Filters.
    *
-   * @param imu IMU measurement.
+   * @param imu IMU measurement 6-DoF [ax, ay, az, wx, wy, wz]^T
    */
   void predict(const Eigen::VectorXd &u) override;
 
   /**
    * @brief Performs update step for Bayes Filters.
    *
-   * @param gnss GNSS position measurement.
+   * @param gnss GNSS position measurement 3-DoF [px, py, pz]^T
    */
   void update(const Eigen::VectorXd &y) override;
 
@@ -54,7 +54,7 @@ private:
   /// delta_t
   double delta_t_;
 
-  /// Current estimated state
+  /// Current estimated state 9-DoF [x, y, z, roll, pitch, yaw, vx, vy, vz]^T
   Eigen::VectorXd x_;
 
   /// State covariance matrix
