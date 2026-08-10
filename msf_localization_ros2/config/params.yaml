@@ -7,8 +7,8 @@
     # topics
 
     # subscribed topics
-    gnss_topic: "/fix"
-    imu_topic: "/imu/data"
+    gnss_topic: "/kitti/oxts/gps/fix"
+    imu_topic: "/kitti/oxts/imu"
 
     # published topics
     odometry_topic: "/filter/odometry"
