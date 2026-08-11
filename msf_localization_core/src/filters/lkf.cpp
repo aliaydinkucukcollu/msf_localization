@@ -20,12 +20,6 @@ LinearKalmanFilter::LinearKalmanFilter(const double& delta_t, const Eigen::Vecto
 
   std::cout << "\n\nLinear Kalman Filter Initialized!\n\n";
 
-  std::cout << "\nInitial state: \n";
-  std::cout << x_ << '\n';
-
-  std::cout << "\nInitial covariance: \n";
-  std::cout << P_ << '\n';
-
   A_.setZero();
   B_.setZero();
   Q_.setZero();

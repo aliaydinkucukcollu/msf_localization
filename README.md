@@ -93,6 +93,9 @@ It contains:
 
 ### Linear Kalman Filter (LKF)
 
+<p align="center">
+  <img src="docs/images/lkf_kitti.gif" width="80%">
+</p>
 
 <table>
   <tr>

@@ -4,9 +4,7 @@
     # select a Kalman Filter from supported options
     filter_type: "LKF" # options: LKF
 
-    # topics
-
-    # subscribed topics
+    # subscribed topics for kitti raw dataset
     gnss_topic: "/kitti/oxts/gps/fix"
     imu_topic: "/kitti/oxts/imu"
 
@@ -15,11 +13,11 @@
     trajectory_topic: "/filter/trajectory"
     fused_gnss_topic: "/filter/fix"
 
-    # frames
+    # frames (ROS REP-105)
     world_frame: "earth"
     map_frame: "map"
     body_frame: "base_link"
 
-    # datum: initial Geodetic point (lat, lon, h)
+    # datum: initial Geodetic point (lat, lon, alt)
     use_datum: false
     datum: [38.43886389, 27.25458333, 0.0]

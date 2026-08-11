@@ -25,7 +25,25 @@ def generate_launch_description() -> LaunchDescription:
         parameters=[LaunchConfiguration('config_file')],
     )
 
+    rviz_config = os.path.join(
+        get_package_share_directory('msf_localization_ros2'),
+        'rviz',
+        'kitti.rviz'
+    )
+
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=[
+            '-d',
+            rviz_config
+        ]
+    )
+
     return LaunchDescription([
         config_file_arg,
         reference_node,
+        rviz_node
     ])

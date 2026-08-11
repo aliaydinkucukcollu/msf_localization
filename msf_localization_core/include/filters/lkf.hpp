@@ -52,7 +52,7 @@ public:
 
 private:
   /// delta_t
-  double delta_t_;
+  const double delta_t_;
 
   /// Current estimated state 9-DoF [x, y, z, roll, pitch, yaw, vx, vy, vz]^T
   Eigen::VectorXd x_;

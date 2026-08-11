@@ -6,6 +6,9 @@
 #include "filters/filter.hpp"
 #include "filters/lkf.hpp"
 
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2/LinearMath/Matrix3x3.hpp>
+
 namespace msf_localization {
 MSFLocalization::MSFLocalization(const rclcpp::NodeOptions &options)
     : rclcpp::Node("msf_localization_ros2_node", options) {
@@ -29,7 +32,7 @@ MSFLocalization::MSFLocalization(const rclcpp::NodeOptions &options)
                          0, 0, 0, 0, 0, 0, 0, 1e-9, 0, 
                          0, 0, 0, 0, 0, 0, 0, 0, 1e-9;
 
-  const double dt{0.002};
+  const double dt{0.1};
 
   /// Create kalman filter
   filter_ = std::make_unique<msf_localization_core::LinearKalmanFilter>(dt, initial_state_, initial_covariance_);
@@ -190,13 +193,16 @@ void MSFLocalization::gnss_callback(const sensor_msgs::msg::NavSatFix::SharedPtr
 
 void MSFLocalization::timer_callback() {
 
-  std::cout << "\nCurrent state:  \n" << filter_->get_state() << '\n';
-
-  std::cout << "\nCovariance: \n" << filter_->get_covariance() << '\n';
-
-  // TODO: Add mutex. May not be required since SingleThreadExecutor.
-
   Eigen::VectorXd current_state_ = filter_->get_state();
+  Eigen::MatrixXd current_covariance_ = filter_->get_covariance();
+
+  tf2::Quaternion q;
+  q.setRPY(current_state_(3), current_state_(4), current_state_(5));
+
+  double qx = q.x();
+  double qy = q.y();
+  double qz = q.z();
+  double qw = q.w();
 
   // ---- map -> base_link transform ----
   geometry_msgs::msg::TransformStamped current_t;
@@ -207,12 +213,10 @@ void MSFLocalization::timer_callback() {
   current_t.transform.translation.x = current_state_(0);
   current_t.transform.translation.y = current_state_(1);
   current_t.transform.translation.z = current_state_(2);
-
-  // TODO: convert RPY to quaternion for map to base_link transform.
-  // current_t.transform.rotation.x = 0.0;
-  // current_t.transform.rotation.y = 0.0;
-  // current_t.transform.rotation.z = 0.0;
-  // current_t.transform.rotation.w = 1.0;
+  current_t.transform.rotation.x = qx;
+  current_t.transform.rotation.y = qy;
+  current_t.transform.rotation.z = qz;
+  current_t.transform.rotation.w = qw;
 
   body_tb_->sendTransform(current_t);
 
@@ -225,11 +229,25 @@ void MSFLocalization::timer_callback() {
   odom.pose.pose.position.y = current_state_(1);
   odom.pose.pose.position.z = current_state_(2);
 
-  // TODO: convert RPY to quaternion for odom orientation.
+  odom.pose.pose.orientation.x = qx;
+  odom.pose.pose.orientation.y = qy;
+  odom.pose.pose.orientation.z = qz;
+  odom.pose.pose.orientation.w = qw;
+
+  odom.pose.covariance[0] = current_covariance_(0, 0);
+  odom.pose.covariance[7] = current_covariance_(1, 1);
+  odom.pose.covariance[14] = current_covariance_(2, 2);
+  odom.pose.covariance[21] = current_covariance_(3, 3);
+  odom.pose.covariance[28] = current_covariance_(4, 4);
+  odom.pose.covariance[35] = current_covariance_(5, 5);
 
   odom.twist.twist.linear.x = current_state_(6);
   odom.twist.twist.linear.y = current_state_(7);
   odom.twist.twist.linear.z = current_state_(8);
+
+  odom.twist.covariance[0] = current_covariance_(6, 6);
+  odom.twist.covariance[7] = current_covariance_(7, 7);
+  odom.twist.covariance[14] = current_covariance_(8, 8);
 
   odom_pub_->publish(odom);
 
@@ -240,7 +258,10 @@ void MSFLocalization::timer_callback() {
   pose.pose.position.y = current_state_(1);
   pose.pose.position.z = current_state_(2);
 
-  // TODO: convert RPY to quaternion for pose orientation.
+  pose.pose.orientation.x = qx;
+  pose.pose.orientation.y = qy;
+  pose.pose.orientation.z = qz;
+  pose.pose.orientation.w = qw;
 
   global_path_.header.stamp = now();
   global_path_.header.frame_id = map_frame_;
