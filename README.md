@@ -1,4 +1,4 @@
-# Multi Sensor Fusion Localization
+# Multi Sensor Fusion (MSF) Localization
 
 **Multi Sensor Fusion Localization using Kalman Filters**
 
@@ -21,6 +21,7 @@ For example:
 
 - **IMU** provides high-rate motion information but accumulates drift.
 - **GNSS** provides globally referenced position but may be noisy or temporarily unavailable.
+- **Wheel odometry** provides high-rate relative motion information from wheel encoders. It is particularly useful for estimating vehicle velocity and short-term motion, but can accumulate error due to wheel slip, uneven terrain, encoder noise, and inaccurate wheel parameters.
 - **LiDAR odometry** provides relative motion information but is affected by environmental conditions and accumulated drift.
 - **Visual odometry** provides motion estimates from camera observations but can fail in challenging visual environments.
 
@@ -88,164 +89,37 @@ It contains:
 
 ---
 
-## State Estimation
+## Supported Filters
 
-The general sensor-fusion pipeline can be represented as:
+### Linear Kalman Filter (LKF)
 
-```text
-                  ┌─────────────┐
-                  │     IMU     │
-                  └──────┬──────┘
-                         │
-                         ▼
-                  ┌─────────────┐
-                  │ Prediction  │
-                  │    Model    │
-                  └──────┬──────┘
-                         │
-                         ▼
-              ┌──────────────────────┐
-              │   Kalman Filter      │
-              │                      │
-              │ State Prediction     │
-              │ Measurement Update   │
-              └──────────┬───────────┘
-                         ▲
-                         │
-          ┌──────────────┼──────────────┐
-          │              │              │
-          │              │              │
-     ┌────┴────┐    ┌────┴─────┐   ┌────┴─────┐
-     │  GNSS   │    │  LiDAR   │   │  Camera  │
-     │ Position│    │ Odometry │   │ Odometry │
-     └─────────┘    └──────────┘   └──────────┘
-                         │
-                         ▼
-                  Fused State
-                         │
-                         ▼
-               Position / Orientation
-                 / Velocity / etc.
-```
 
-The filter follows the standard two-stage estimation process:
-
-### Prediction
-
-The previous state is propagated using the process model:
-
-```text
-xₖ|ₖ₋₁ = f(xₖ₋₁|ₖ₋₁, uₖ)
-
-Pₖ|ₖ₋₁ = Fₖ Pₖ₋₁|ₖ₋₁ Fₖᵀ + Qₖ
-```
-
-where:
-
-- `x` — system state
-- `u` — control/input vector
-- `P` — state covariance
-- `F` — state-transition Jacobian
-- `Q` — process-noise covariance
-
-### Measurement Update
-
-When a sensor measurement becomes available:
-
-```text
-yₖ = h(xₖ) + vₖ
-```
-
-the filter incorporates the measurement:
-
-```text
-Kₖ = Pₖ Hₖᵀ (Hₖ Pₖ Hₖᵀ + Rₖ)⁻¹
-
-xₖ = xₖ + Kₖ(yₖ - h(xₖ))
-
-Pₖ = (I - Kₖ Hₖ)Pₖ
-```
-
-This structure allows measurements from different sensors to contribute to the same state estimate.
-
----
-
-## Supported / Planned Filters
-
-The project is intended as a platform for implementing and comparing different state-estimation algorithms.
-
-Potential filters include:
-
-- Linear Kalman Filter (LKF)
-- Extended Kalman Filter (EKF)
-- Iterated Extended Kalman Filter (IEKF)
-- Unscented Kalman Filter (UKF)
-- Ensemble Kalman Filter (EnKF)
-- Cubature Kalman Filter (CKF)
-- Sigma-Point Kalman Filter (SPKF)
-- Iterated Sigma-Point Kalman Filter (ISPKF)
-
-The architecture is intended to allow additional filtering algorithms to be introduced without coupling them directly to the ROS 2 layer.
-
----
-
-## Sensor Fusion
-
-The framework is intended for multi-sensor localization applications such as:
-
-```text
-              IMU
-               │
-               ▼
-          ┌──────────┐
-          │          │
-GNSS ────►│          │◄──── LiDAR Odometry
-          │  Fusion  │
-Camera ──►│          │
-          │          │
-          └────┬─────┘
-               │
-               ▼
-        Vehicle State
-```
-
-Possible state variables include:
-
-```text
-Position
-    x, y, z
-
-Orientation
-    roll, pitch, yaw
-
-Velocity
-    vx, vy, vz
-```
-
-The exact state representation depends on the filter and motion model being implemented.
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/images/rviz_lkf_output_from_kitti_2011_09_26_0014.png" width="100%" />
+      <br />
+      <b>Kitti 2011_09_26_0014 result for LKF</b>
+    </td>
+    <td align="center">
+      <img src="docs/images/rviz_lkf_output_from_kitti_2011_10_03_0042.png" width="100%" />
+      <br />
+      <b>Kitti 2011_10_03_0042 result for LKF</b>
+    </td>
+  </tr>
+</table>
 
 ---
 
 ## Requirements
 
-### Operating System
-
-- Ubuntu 22.04
-
-### ROS 2
-
-- ROS 2 Humble
-
-### Requirements
-
+- ROS2 Humble
 - Eigen
 - GeographicLib
 
-The ROS 2 package follows the standard ROS 2 package structure with `package.xml`, CMake configuration, launch files and RViz resources.
-
 ---
 
-## Installation
+## Installation & Build
 
 Clone the repository:
 
@@ -266,20 +140,6 @@ Build the workspace:
 colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
-Source the workspace:
-
-```bash
-source install/setup.bash
-```
-
-For VS Code IntelliSense, the repository currently uses:
-
-```bash
-ln -s build/compile_commands.json compile_commands.json
-```
-
-These are also the build steps currently documented by the repository.
-
 ---
 
 ## Running
@@ -294,35 +154,6 @@ ros2 launch msf_localization_ros2 msf_localization_ros2.launch.py
 ```
 
 The ROS 2 package contains dedicated directories for configuration, launch files and RViz visualization.
-
----
-
-## Linear Kalman Filter Results
-
-<table>
-  <tr>
-    <td align="center">
-      <img src="docs/images/rviz_lkf_output_from_kitti_2011_09_26_0014.png" width="100%" />
-      <br />
-      <b>Kitti 2011_09_26_0014 result for LKF</b>
-    </td>
-    <td align="center">
-      <img src="docs/images/rviz_lkf_output_from_kitti_2011_10_03_0042.png" width="100%" />
-      <br />
-      <b>Kitti 2011_10_03_0042 result for LKF</b>
-    </td>
-  </tr>
-</table>
-
----
-For offline development, recorded datasets can be replayed repeatedly while tuning:
-
-- Process noise `Q`
-- Measurement noise `R`
-- Initial covariance `P₀`
-- Initial state
-- Sensor update rates
-- Motion-model parameters
 
 ---
 
@@ -375,93 +206,6 @@ The framework is particularly suitable for robotics and autonomous-vehicle local
 
 ---
 
-## Development Roadmap
-
-Planned development areas include:
-
-### Filtering
-
-- [x] Kalman filter framework
-- [ ] Extended Kalman Filter
-- [ ] Iterated Extended Kalman Filter
-- [ ] Unscented Kalman Filter
-- [ ] Error-State Kalman Filter
-- [ ] Invariant Extended Kalman Filter
-- [ ] Sigma-point filters
-
-### Sensor Models
-
-- [ ] IMU propagation
-- [ ] GNSS position update
-- [ ] GNSS velocity update
-- [ ] LiDAR odometry update
-- [ ] Visual odometry update
-- [ ] Wheel odometry update
-
-### Localization
-
-- [ ] ENU coordinate representation
-- [ ] ECEF / geodetic conversion
-- [ ] Quaternion-based orientation representation
-- [ ] IMU preintegration
-- [ ] Sensor extrinsic calibration support
-- [ ] Time synchronization handling
-
-### Evaluation
-
-- [ ] Automated trajectory evaluation
-- [ ] ATE calculation
-- [ ] RPE calculation
-- [ ] RMSE statistics
-- [ ] Covariance consistency evaluation
-- [ ] Dataset examples
-
-### Software Quality
-
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] Continuous integration
-- [ ] clang-format
-- [ ] clang-tidy
-- [ ] Doxygen documentation
-
----
-
-## Project Structure
-
-### Core Library
-
-```text
-msf_localization_core/
-├── apps/
-├── include/
-│   └── filters/
-├── src/
-│   └── filters/
-└── CMakeLists.txt
-```
-
-This package is responsible for the underlying estimation implementation.
-
-### ROS 2 Interface
-
-```text
-msf_localization_ros2/
-├── config/
-├── include/
-│   └── msf_localization_ros2/
-├── launch/
-├── rviz/
-├── src/
-├── CMakeLists.txt
-└── package.xml
-```
-
-This package contains the ROS 2-specific application layer and visualization/configuration resources.
-
----
-
-
 ## License
 
 This project is licensed under the **MIT License**.
@@ -484,16 +228,13 @@ This project is developed as an educational and research-oriented framework for 
 
 ## References
 
-Useful topics for understanding the algorithms implemented in this project include:
+- Probabilistic Robotics
+Sebastian Thrun, Wolfram Burgard, Dieter Fox.
+MIT Press, 2005.
 
-- Kalman Filtering
-- Bayesian State Estimation
-- Nonlinear State Estimation
-- Inertial Navigation Systems
-- GNSS/INS Sensor Fusion
-- Error-State Kalman Filtering
-- Lie-group-based State Estimation
-- Multi-Sensor Localization
+- State Estimation for Robotics
+Timothy D. Barfoot.
+Cambridge University Press, 2017.
 
 ---
 
