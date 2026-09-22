@@ -19,7 +19,7 @@ public:
    * @param P0 initial covariance matrix
    * @param delta_t sampling period
    */
-  explicit LinearKalmanFilter(const double& delta_t, const Eigen::VectorXd& x0, const Eigen::MatrixXd& P0);
+  explicit LinearKalmanFilter(const double& delta_t, const StateVector& x0, const StateCovarianceMatrix& P0);
 
   /**
    * @brief Virtual destructor.
@@ -31,51 +31,51 @@ public:
    *
    * @param imu IMU measurement 6-DoF [ax, ay, az, wx, wy, wz]^T
    */
-  void predict(const Eigen::VectorXd &u) override;
+  void predict(const ControlVector &u) override;
 
   /**
    * @brief Performs update step for Bayes Filters.
    *
    * @param gnss GNSS position measurement 3-DoF [px, py, pz]^T
    */
-  void update(const Eigen::VectorXd &y) override;
+  void update(const MeasurementVector &y) override;
 
   /**
    * @brief Returns current state vector.
    */
-  Eigen::VectorXd get_state() const override;
+  StateVector get_state() const override;
 
   /**
    * @brief Returns current state covariance matrix.
    */
-  Eigen::MatrixXd get_covariance() const override;
+  StateCovarianceMatrix get_covariance() const override;
 
 private:
   /// delta_t
   const double delta_t_;
 
   /// Current estimated state 9-DoF [x, y, z, roll, pitch, yaw, vx, vy, vz]^T
-  Eigen::VectorXd x_;
+  StateVector x_;
 
   /// State covariance matrix
-  Eigen::MatrixXd P_;
+  StateCovarianceMatrix P_;
 
   /// State transition matrix
-  Eigen::MatrixXd A_;
+  StateTransitionMatrix A_;
 
   /// Control matrix
-  Eigen::MatrixXd B_;
+  ControlMatrix B_;
 
   /// Process noise covariance
-  Eigen::MatrixXd Q_;
+  ProcessNoiseCovarianceMatrix Q_;
 
   /// Kalman Gain
-  Eigen::MatrixXd K_;
+  KalmanGainMatrix K_;
 
   /// Measurement matrix
-  Eigen::MatrixXd C_;
+  MeasurementMatrix C_;
 
   /// Measurement covariance matrix
-  Eigen::MatrixXd R_;
+  MeasurementCovarianceMatrix R_;
 };
 } // namespace msf_localization_core

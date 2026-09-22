@@ -7,6 +7,7 @@ A modular C++/ROS 2 localization framework for estimating robot/vehicle state by
 The project is designed with a separation between the **localization/estimation core** and the **ROS 2 interface**, making the estimation algorithms reusable outside of ROS 2.
 
 [![ROS 2](https://img.shields.io/badge/ROS%202-Humble-22314E.svg)](https://docs.ros.org/en/humble/)
+[![ROS 2](https://img.shields.io/badge/ROS%202-Jazzy-22314E.svg)](https://docs.ros.org/en/jazzy/)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420.svg)](https://ubuntu.com/)
 [![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -93,21 +94,12 @@ It contains:
 
 ### Linear Kalman Filter (LKF)
 
-<p align="center">
-  <img src="docs/images/lkf_kitti.gif" width="80%">
-</p>
-
 <table>
   <tr>
     <td align="center">
-      <img src="docs/images/rviz_lkf_output_from_kitti_2011_09_26_0014.png" width="100%" />
+      <img src="docs/images/rviz_lkf_output_from_kitti_2011_09_26_0022.png" width="100%" />
       <br />
-      <b>Kitti 2011_09_26_0014 result for LKF</b>
-    </td>
-    <td align="center">
-      <img src="docs/images/rviz_lkf_output_from_kitti_2011_10_03_0042.png" width="100%" />
-      <br />
-      <b>Kitti 2011_10_03_0042 result for LKF</b>
+      <b>LKF result for Kitti 2011_09_26_0022 Dataset</b>
     </td>
   </tr>
 </table>
@@ -117,7 +109,7 @@ It contains:
 ## Requirements
 
 - ROS2 Humble
-- Eigen
+- Eigen3
 - GeographicLib
 
 ---

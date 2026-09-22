@@ -3,11 +3,14 @@
 
 #include "msf_localization_ros2/msf_localization_ros2.hpp"
 
+#include "filters/ekf.hpp"
 #include "filters/filter.hpp"
+#include "filters/filter_creator.hpp"
 #include "filters/lkf.hpp"
 
-#include <tf2/LinearMath/Quaternion.hpp>
+#include <rclcpp/logging.hpp>
 #include <tf2/LinearMath/Matrix3x3.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
 
 namespace msf_localization {
 MSFLocalization::MSFLocalization(const rclcpp::NodeOptions &options)
@@ -20,22 +23,16 @@ MSFLocalization::MSFLocalization(const rclcpp::NodeOptions &options)
   load_parameters();
   print_parameters();
 
-  initial_state_.setZero();
+  initial_state_ = Filter::StateVector::Zero();
 
-  initial_covariance_ << 1e-9, 0, 0, 0, 0, 0, 0, 0, 0,
-                         0, 1e-9, 0, 0, 0, 0, 0, 0, 0,
-                         0, 0, 1e-9, 0, 0, 0, 0, 0, 0,
-                         0, 0, 0, 1e-9, 0, 0, 0, 0, 0,
-                         0, 0, 0, 0, 1e-9, 0, 0, 0, 0,
-                         0, 0, 0, 0, 0, 1e-9, 0, 0, 0,
-                         0, 0, 0, 0, 0, 0, 1e-9, 0, 0,
-                         0, 0, 0, 0, 0, 0, 0, 1e-9, 0, 
-                         0, 0, 0, 0, 0, 0, 0, 0, 1e-9;
+  initial_covariance_.setZero();
+  initial_covariance_.diagonal() << 1, 1, 1, 0.1, 0.1, 0.1, 0.5, 0.5, 0.5;
 
-  const double dt{0.1};
+  const double dt = 0.1;
 
   /// Create kalman filter
-  filter_ = std::make_unique<msf_localization_core::LinearKalmanFilter>(dt, initial_state_, initial_covariance_);
+  filter_ = msf_localization_core::FilterCreator::create_filter(
+      filter_type_, dt, initial_state_, initial_covariance_);
 
   imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
       imu_topic_, rclcpp::SensorDataQoS(),
@@ -45,13 +42,18 @@ MSFLocalization::MSFLocalization(const rclcpp::NodeOptions &options)
       gnss_topic_, rclcpp::SensorDataQoS(),
       std::bind(&MSFLocalization::gnss_callback, this, std::placeholders::_1));
 
-  odom_pub_ = create_publisher<nav_msgs::msg::Odometry>(odom_topic_, rclcpp::QoS(30));
+  odom_pub_ =
+      create_publisher<nav_msgs::msg::Odometry>(odom_topic_, rclcpp::QoS(30));
 
-  path_pub_ = create_publisher<nav_msgs::msg::Path>(trajectory_topic_, rclcpp::QoS(30));
+  path_pub_ =
+      create_publisher<nav_msgs::msg::Path>(trajectory_topic_, rclcpp::QoS(30));
 
-  fused_gnss_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(fused_gnss_topic_, rclcpp::QoS(10));
+  fused_gnss_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
+      fused_gnss_topic_, rclcpp::QoS(10));
 
-  pub_timer_ = create_wall_timer(std::chrono::milliseconds(100), std::bind(&MSFLocalization::timer_callback, this));
+  pub_timer_ =
+      create_wall_timer(std::chrono::milliseconds(100),
+                        std::bind(&MSFLocalization::timer_callback, this));
 
   origin_stb_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
 
@@ -77,8 +79,7 @@ void MSFLocalization::declare_parameters() {
 }
 
 void MSFLocalization::load_parameters() {
-  filter_name_ = get_parameter("filter_type").as_string();
-  filter_type_ = string_to_filtertype(filter_name_);
+  filter_type_ = get_parameter("filter_type").as_string();
 
   gnss_topic_ = get_parameter("gnss_topic").as_string();
   imu_topic_ = get_parameter("imu_topic").as_string();
@@ -97,28 +98,35 @@ void MSFLocalization::load_parameters() {
 
 void MSFLocalization::print_parameters() const {
   RCLCPP_INFO(get_logger(), "================= Filter Type =================");
-  RCLCPP_INFO_STREAM(get_logger(), "----> Filter Type       : " << filter_name_);
+  RCLCPP_INFO_STREAM(get_logger(),
+                     "----> Filter Type       : " << filter_type_);
 
   RCLCPP_INFO(get_logger(), "================= Topic Names =================");
   RCLCPP_INFO_STREAM(get_logger(), "----> GNSS Topic        : " << gnss_topic_);
   RCLCPP_INFO_STREAM(get_logger(), "----> IMU Topic         : " << imu_topic_);
   RCLCPP_INFO_STREAM(get_logger(), "----> Odometry Topic    : " << odom_topic_);
-  RCLCPP_INFO_STREAM(get_logger(), "----> Trajectory Topic  : " << trajectory_topic_);
-  RCLCPP_INFO_STREAM(get_logger(), "----> Fused GNSS Topic  : " << fused_gnss_topic_);
+  RCLCPP_INFO_STREAM(get_logger(),
+                     "----> Trajectory Topic  : " << trajectory_topic_);
+  RCLCPP_INFO_STREAM(get_logger(),
+                     "----> Fused GNSS Topic  : " << fused_gnss_topic_);
 
   RCLCPP_INFO(get_logger(), "================= Frame Names =================");
-  RCLCPP_INFO_STREAM(get_logger(), "----> World Frame       : " << world_frame_);
+  RCLCPP_INFO_STREAM(get_logger(),
+                     "----> World Frame       : " << world_frame_);
   RCLCPP_INFO_STREAM(get_logger(), "----> Map Frame         : " << map_frame_);
   RCLCPP_INFO_STREAM(get_logger(), "----> Body Frame        : " << body_frame_);
 
   RCLCPP_INFO(get_logger(), "================= Datum =================");
-  RCLCPP_INFO_STREAM(get_logger(), "----> Use Datum         : " << std::boolalpha << use_datum_);
-  RCLCPP_INFO_STREAM(get_logger(), "----> Datum             : " << "[ " << datum_[0] << ", " << datum_[1] << ", " << datum_[2] << " ]");
+  RCLCPP_INFO_STREAM(get_logger(), "----> Use Datum         : "
+                                       << std::boolalpha << use_datum_);
+  RCLCPP_INFO_STREAM(get_logger(), "----> Datum             : "
+                                       << "[ " << datum_[0] << ", " << datum_[1]
+                                       << ", " << datum_[2] << " ]");
 }
 
 void MSFLocalization::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg) {
 
-  Eigen::VectorXd input(6);
+  Filter::ControlVector input;
   input(0) = msg->linear_acceleration.x;
   input(1) = msg->linear_acceleration.y;
   input(2) = msg->linear_acceleration.z - 9.81; // gravity compensation
@@ -129,14 +137,17 @@ void MSFLocalization::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg) {
   // check if the klaman filter is initialized or not
   if (enu_frame_.has_value()) {
     filter_->predict(input);
+    RCLCPP_DEBUG_ONCE(this->get_logger(), "IMU start.");
   }
 }
 
-void MSFLocalization::gnss_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
+void MSFLocalization::gnss_callback(
+    const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
+  RCLCPP_DEBUG_ONCE(this->get_logger(), "GNSS start.");
 
   // Check first message: Is initialized the kalman filter?
   if (!enu_frame_.has_value()) {
-    
+
     // Is datum used?
     // YES: use config datum
     if (use_datum_) {
@@ -151,11 +162,12 @@ void MSFLocalization::gnss_callback(const sensor_msgs::msg::NavSatFix::SharedPtr
       altitude_ = msg->altitude;
     }
 
-    enu_frame_.emplace(latitude_, longitude_, altitude_, GeographicLib::Geocentric::WGS84());
+    enu_frame_.emplace(latitude_, longitude_, altitude_,
+                       GeographicLib::Geocentric::WGS84());
 
-    RCLCPP_WARN_STREAM(get_logger(), "=== Origin set ===> lat: " << latitude_ 
-                                                     << " lon: " << longitude_
-                                                     << " alt: " << altitude_);
+    RCLCPP_WARN_STREAM(get_logger(), "=== Origin set ===> lat: "
+                                         << latitude_ << " lon: " << longitude_
+                                         << " alt: " << altitude_);
 
     const GeographicLib::Geocentric &earth = GeographicLib::Geocentric::WGS84();
     double ecef_x, ecef_y, ecef_z;
@@ -183,9 +195,10 @@ void MSFLocalization::gnss_callback(const sensor_msgs::msg::NavSatFix::SharedPtr
 
   // convert new messages to ENU
   double east, north, up;
-  enu_frame_->Forward(msg->latitude, msg->longitude, msg->altitude, east, north, up);
+  enu_frame_->Forward(msg->latitude, msg->longitude, msg->altitude, east, north,
+                      up);
 
-  Eigen::VectorXd measurement(3);
+  Filter::MeasurementVector measurement;
   measurement << east, north, up;
 
   filter_->update(measurement);
@@ -193,8 +206,11 @@ void MSFLocalization::gnss_callback(const sensor_msgs::msg::NavSatFix::SharedPtr
 
 void MSFLocalization::timer_callback() {
 
-  Eigen::VectorXd current_state_ = filter_->get_state();
-  Eigen::MatrixXd current_covariance_ = filter_->get_covariance();
+  Filter::StateVector current_state_ = filter_->get_state();
+
+  // std::cout << "\n---- State: ----\n" << current_state_ << '\n';
+
+  Filter::StateCovarianceMatrix current_covariance_ = filter_->get_covariance();
 
   tf2::Quaternion q;
   q.setRPY(current_state_(3), current_state_(4), current_state_(5));
@@ -274,18 +290,6 @@ void MSFLocalization::timer_callback() {
                       fused_gnss.latitude, fused_gnss.longitude,
                       fused_gnss.altitude);
   fused_gnss_pub_->publish(fused_gnss);
-}
-
-FilterType MSFLocalization::string_to_filtertype(std::string str) {
-
-  std::transform(str.begin(), str.end(), str.begin(), ::toupper);
-
-  if (str == "LKF") {
-    return FilterType::LKF;
-  } else {
-    return FilterType::NONE;
-    throw std::runtime_error("Unknown filter type: " + str);
-  }
 }
 
 } // namespace msf_localization

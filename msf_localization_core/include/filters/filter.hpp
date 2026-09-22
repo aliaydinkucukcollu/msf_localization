@@ -14,10 +14,35 @@ namespace msf_localization_core {
  */
 class Filter {
 public:
+  static constexpr int state_size_ = 9;
+  static constexpr int control_size_ = 6;
+  static constexpr int measurement_size_ = 3;
+
+  using StateVector = Eigen::Matrix<double, state_size_, 1>;
+  using ControlVector = Eigen::Matrix<double, control_size_, 1>;
+  using MeasurementVector = Eigen::Matrix<double, measurement_size_, 1>;
+
+  using StateTransitionMatrix = Eigen::Matrix<double, state_size_, state_size_>;
+  using ControlMatrix = Eigen::Matrix<double, state_size_, control_size_>;
+  using StateCovarianceMatrix = Eigen::Matrix<double, state_size_, state_size_>;
+  using ProcessNoiseCovarianceMatrix = Eigen::Matrix<double, state_size_, state_size_>;
+
+  using StateTransitionFunction = Eigen::Matrix<double, state_size_, state_size_>;
+  using StateTransitionJacobian = Eigen::Matrix<double, state_size_, state_size_>;
+
+  using MeasurementFunction = Eigen::Matrix<double, measurement_size_, state_size_>;
+  using MeasurementJacobian = Eigen::Matrix<double, measurement_size_, state_size_>;
+
+  using KalmanGainMatrix = Eigen::Matrix<double, state_size_, measurement_size_>;
+
+  using MeasurementMatrix = Eigen::Matrix<double, measurement_size_, state_size_>;
+  using MeasurementCovarianceMatrix = Eigen::Matrix<double, measurement_size_, measurement_size_>;
+
+  using IdentityMatrix = Eigen::Matrix<double, state_size_, state_size_>;
 
   /**
-  * @brief Virtual destructor.
-  */
+   * @brief Virtual destructor.
+   */
   virtual ~Filter() = default;
 
   /**
@@ -25,27 +50,23 @@ public:
    *
    * @param imu IMU measurement.
    */
-  virtual void predict(const Eigen::VectorXd &u) = 0;
+  virtual void predict(const ControlVector &u) = 0;
 
   /**
    * @brief Performs update step for Bayes Filters.
    *
    * @param gnss GNSS position measurement.
    */
-  virtual void update(const Eigen::VectorXd &y) = 0;
+  virtual void update(const MeasurementVector &y) = 0;
 
   /**
    * @brief Returns current state vector.
    */
-  virtual Eigen::VectorXd get_state() const = 0;
+  virtual StateVector get_state() const = 0;
 
   /**
    * @brief Returns current state covariance matrix.
    */
-  virtual Eigen::MatrixXd get_covariance() const = 0;
-
-  static constexpr std::size_t state_size_ = 9;
-  static constexpr std::size_t input_size_ = 6;
-  static constexpr std::size_t measurement_size_ = 3;
+  virtual StateCovarianceMatrix get_covariance() const = 0;
 };
 } // namespace msf_localization_core

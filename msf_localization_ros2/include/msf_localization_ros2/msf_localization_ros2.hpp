@@ -17,13 +17,12 @@
 
 #include "filters/filter.hpp"
 #include "filters/lkf.hpp"
+#include "filters/ekf.hpp"
+#include "filters/filter_creator.hpp"
 
 namespace msf_localization {
 
-enum class FilterType {
-  LKF, // Linear Kalman Filter
-  NONE // For NOT FilterType
-};
+using msf_localization_core::Filter;
 
 /**
  * @brief ROS2 API for State Estimation.
@@ -70,18 +69,8 @@ private:
    */
   void timer_callback();
 
-  /**
-   * @brief std::string to FilterType conversion
-   *
-   * @param str Kalman Filter Type
-   */
-  FilterType string_to_filtertype(std::string str);
-
-  /// Kalman filter type
-  FilterType filter_type_;
-
   /// Filter type parameter
-  std::string filter_name_;
+  std::string filter_type_;
 
   /// GNSS topic to subscribe
   std::string gnss_topic_;
@@ -152,13 +141,13 @@ private:
   /// GeographicLib ENU frame
   std::optional<GeographicLib::LocalCartesian> enu_frame_;
 
-  /// Kalman filter
-  std::unique_ptr<msf_localization_core::Filter> filter_;
-
   // initial state for bayes filter
-  Eigen::VectorXd initial_state_{9};
+  Filter::StateVector initial_state_;
 
   // initial covariance for bayes filter
-  Eigen::MatrixXd initial_covariance_{9,9};
+  Filter::StateCovarianceMatrix initial_covariance_;
+
+  // Filter object
+  std::unique_ptr<Filter> filter_;
 };
 } // namespace msf_localization

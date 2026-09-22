@@ -12,21 +12,13 @@ namespace msf_localization_core {
    * @param P0 initial covariance matrix
    * @param delta_t sampling period
    */
-LinearKalmanFilter::LinearKalmanFilter(const double& delta_t, const Eigen::VectorXd& x0, const Eigen::MatrixXd& P0)
+LinearKalmanFilter::LinearKalmanFilter(const double& delta_t, const StateVector& x0, const StateTransitionMatrix& P0)
     : delta_t_(delta_t), x_(x0), P_(P0),
-      A_(state_size_, state_size_), B_(state_size_, input_size_),
-      Q_(state_size_, state_size_),K_(state_size_, measurement_size_), 
-      C_(measurement_size_, state_size_), R_(measurement_size_, measurement_size_) {
+      A_(StateTransitionMatrix::Zero()), B_(ControlMatrix::Zero()),
+      Q_(ProcessNoiseCovarianceMatrix::Zero()), K_(KalmanGainMatrix::Zero()), 
+      C_(MeasurementMatrix::Zero()), R_(MeasurementCovarianceMatrix::Zero()) {
 
   std::cout << "\n\nLinear Kalman Filter Initialized!\n\n";
-
-  A_.setZero();
-  B_.setZero();
-  Q_.setZero();
-  K_.setZero();
-  C_.setZero();
-  R_.setZero();
-
 }
 
 /**
@@ -36,7 +28,7 @@ LinearKalmanFilter::LinearKalmanFilter(const double& delta_t, const Eigen::Vecto
  *
  *   P_ = A_ * P_ * A_^T + Q
  */
-void LinearKalmanFilter::predict(const Eigen::VectorXd &u) {
+void LinearKalmanFilter::predict(const ControlVector &u) {
 
   A_ << 1, 0, 0, 0, 0, 0, delta_t_, 0, 0,
         0, 1, 0, 0, 0, 0, 0, delta_t_, 0,
@@ -82,7 +74,7 @@ void LinearKalmanFilter::predict(const Eigen::VectorXd &u) {
  *
  *  P_ = (1 - K_ * C_) * P_
  */
-void LinearKalmanFilter::update(const Eigen::VectorXd &y) {
+void LinearKalmanFilter::update(const MeasurementVector &y) {
 
   C_ << 1, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 1, 0, 0, 0, 0, 0, 0, 0,
@@ -96,16 +88,16 @@ void LinearKalmanFilter::update(const Eigen::VectorXd &y) {
 
   x_ = x_ + (K_ * (y - C_ * x_));
 
-  Eigen::MatrixXd I = Eigen::MatrixXd::Identity(state_size_, state_size_);
+  IdentityMatrix I = IdentityMatrix::Identity();
 
   P_ = (I - (K_ * C_)) * P_;
 }
 
-Eigen::VectorXd LinearKalmanFilter::get_state() const {
+Filter::StateVector LinearKalmanFilter::get_state() const {
   return x_;
 }
 
-Eigen::MatrixXd LinearKalmanFilter::get_covariance() const {
+Filter::StateCovarianceMatrix LinearKalmanFilter::get_covariance() const {
   return P_;
 }
 

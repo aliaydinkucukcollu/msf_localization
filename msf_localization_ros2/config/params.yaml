@@ -2,7 +2,7 @@
   ros__parameters:
 
     # select a Kalman Filter from supported options
-    filter_type: "LKF" # options: LKF
+    filter_type: "LKF" # options: LKF, EKF
 
     # subscribed topics for kitti raw dataset
     gnss_topic: "/kitti/oxts/gps/fix"

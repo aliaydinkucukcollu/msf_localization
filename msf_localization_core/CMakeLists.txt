@@ -27,6 +27,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(${PROJECT_NAME}
     src/filters/lkf.cpp
+    src/filters/ekf.cpp
+    src/filters/filter_creator.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -35,7 +37,6 @@ target_include_directories(${PROJECT_NAME}
 )
 
 # dependencies
-
 find_package(Eigen3 REQUIRED)
 
 target_link_libraries(${PROJECT_NAME}
@@ -43,11 +44,11 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # ==============================================================================
-# Apps
+# Examples
 # ==============================================================================
 
 add_executable(lkf_demo
-    apps/lkf_demo.cpp
+    examples/lkf_demo.cpp
 )
 
 target_link_libraries(lkf_demo
