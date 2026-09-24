@@ -22,9 +22,6 @@ For example:
 
 - **IMU** provides high-rate motion information but accumulates drift.
 - **GNSS** provides globally referenced position but may be noisy or temporarily unavailable.
-- **Wheel odometry** provides high-rate relative motion information from wheel encoders. It is particularly useful for estimating vehicle velocity and short-term motion, but can accumulate error due to wheel slip, uneven terrain, encoder noise, and inaccurate wheel parameters.
-- **LiDAR odometry** provides relative motion information but is affected by environmental conditions and accumulated drift.
-- **Visual odometry** provides motion estimates from camera observations but can fail in challenging visual environments.
 
 Multi-sensor fusion combines these measurements into a single state estimate that is generally more robust than relying on an individual sensor.
 
@@ -37,26 +34,23 @@ This project provides a framework for implementing and experimenting with such l
 The project is divided into two main components:
 
 ```text
-msf_localization/
-├── msf_localization_core/
-│   ├── apps/
-│   ├── include/
-│   │   └── filters/
-│   ├── src/
-│   │   └── filters/
-│   └── CMakeLists.txt
-│
-├── msf_localization_ros2/
-│   ├── config/
-│   ├── include/
-│   │   └── msf_localization_ros2/
-│   ├── launch/
-│   ├── rviz/
-│   ├── src/
-│   ├── CMakeLists.txt
-│   └── package.xml
-│
+├── docs
+│   └── images
 ├── LICENSE
+├── msf_localization_core // Core Library
+│   ├── CMakeLists.txt
+│   ├── docs              // math foundation
+│   ├── examples
+│   ├── include
+│   └── src
+├── msf_localization_ros2 // ROS2 API
+│   ├── CMakeLists.txt
+│   ├── config
+│   ├── include
+│   ├── launch
+│   ├── package.xml
+│   ├── rviz
+│   └── src
 └── README.md
 ```
 
@@ -75,6 +69,11 @@ This makes it possible to use the estimation algorithms in:
 - simulation environments
 - offline dataset processing
 - unit tests and research experiments
+
+Currently core library supports two types of filter as:
+
+- Linear Kalman Filter (LKF)
+- Extended Kalman Filter (EKF)
 
 ### `msf_localization_ros2`
 
@@ -104,11 +103,23 @@ It contains:
   </tr>
 </table>
 
+### Extended Kalman Filter (EKF)
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/images/rviz_ekf_output_from_kitti_2011_09_26_0022.png" width="100%" />
+      <br />
+      <b>EKF result for Kitti 2011_09_26_0022 Dataset</b>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## Requirements
 
-- ROS2 Humble
+- ROS2 Humble or ROS2 Jazzy
 - Eigen3
 - GeographicLib
 
@@ -116,7 +127,12 @@ It contains:
 
 ## Installation & Build
 
-Clone the repository:
+### Install deps:
+```bash
+
+```
+
+### Setup the project:
 
 ```bash
 git clone -b humble-dev https://github.com/aliaydinkucukcollu/msf_localization.git
@@ -161,23 +177,21 @@ The project is being developed around several goals.
 Filtering algorithms should be independent of the ROS 2 interface.
 
 ```text
-                ┌────────────────────┐
-                │ Localization Core  │
-                │                    │
-                │  Kalman Filters    │
-                │  State Models      │
-                │  Measurement Models│
-                └─────────▲──────────┘
+                ┌────────────────────----┐
+                │ msf_localization_core  │
+                │                        │
+                │   Kalman Filters       │
+                └─────────▲──────────----┘
                           │
                           │
-                ┌─────────┴──────────┐
-                │      ROS 2         │
-                │                    │
-                │ Subscribers        │
-                │ Publishers         │
-                │ Parameters         │
-                │ Launch             │
-                └────────────────────┘
+                ┌─────────┴─────────----─┐
+                │ msf_localization_ros2  │
+                │                        │
+                │   Subscribers          │
+                │   Publishers           │
+                │   Parameters           │
+                │   Launch               │
+                └───────────────────----─┘
 ```
 
 ### 2. Sensor Independence
@@ -233,4 +247,4 @@ Cambridge University Press, 2017.
 
 ---
 
-**If you find this project useful, consider giving it a ⭐ on GitHub.**
+**If you find this project useful, please consider giving it a ⭐ on GitHub.**
