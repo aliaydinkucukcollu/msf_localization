@@ -129,6 +129,11 @@ It contains:
 
 ### Install deps:
 ```bash
+# Eigen3
+sudo apt install libeigen3-dev
+
+# GeographicLib
+sudo apt install libgeographiclib-dev geographiclib-tools
 
 ```
 
