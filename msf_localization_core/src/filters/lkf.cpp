@@ -8,9 +8,9 @@ namespace msf_localization_core {
   /**
    * @brief Constructor of Linear Kalman Filter.
    *
+   * @param delta_t sampling period
    * @param x0 initial state
    * @param P0 initial covariance matrix
-   * @param delta_t sampling period
    */
 LinearKalmanFilter::LinearKalmanFilter(const double& delta_t, const StateVector& x0, const StateTransitionMatrix& P0)
     : delta_t_(delta_t), x_(x0), P_(P0),

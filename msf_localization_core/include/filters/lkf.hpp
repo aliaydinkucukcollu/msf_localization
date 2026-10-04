@@ -10,33 +10,33 @@ namespace msf_localization_core {
  * This class estimates current state using IMU measurements for prediction and
  * GNSS measurements for prediction via assuming the model as linear.
  */
-class LinearKalmanFilter : public Filter {
+class LinearKalmanFilter final: public Filter {
 public:
   /**
    * @brief Constructor of Linear Kalman Filter.
    *
+   * @param delta_t sampling period
    * @param x0 initial state
    * @param P0 initial covariance matrix
-   * @param delta_t sampling period
    */
   explicit LinearKalmanFilter(const double& delta_t, const StateVector& x0, const StateCovarianceMatrix& P0);
 
   /**
-   * @brief Virtual destructor.
+   * @brief Destructor.
    */
-  ~LinearKalmanFilter() override = default;
+  ~LinearKalmanFilter() = default;
 
   /**
    * @brief Performs prediction step for Kalman Filters.
    *
-   * @param imu IMU measurement 6-DoF [ax, ay, az, wx, wy, wz]^T
+   * @param u IMU measurement 6-DoF [ax, ay, az, wx, wy, wz]^T
    */
   void predict(const ControlVector &u) override;
 
   /**
    * @brief Performs update step for Bayes Filters.
    *
-   * @param gnss GNSS position measurement 3-DoF [px, py, pz]^T
+   * @param y GNSS position measurement 3-DoF [px, py, pz]^T
    */
   void update(const MeasurementVector &y) override;
 

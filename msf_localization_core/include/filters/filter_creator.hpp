@@ -9,12 +9,16 @@
 
 namespace msf_localization_core {
 
+/**
+* @brief Kalman Filter Creator.
+*/
 class FilterCreator {
 public:
   static std::unique_ptr<Filter>
-  create_filter(const std::string &filter_type, const double &dt,
-                const Filter::StateVector &x0,
-                const Filter::StateCovarianceMatrix &P0);
+  create_filter(const std::string &filter_type, 
+              const double &dt,
+              const Filter::StateVector &x0,
+              const Filter::StateCovarianceMatrix &P0);
 };
 
 } // namespace msf_localization_core

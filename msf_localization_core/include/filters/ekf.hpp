@@ -10,22 +10,22 @@ namespace msf_localization_core {
  * This class estimates current state via using IMU measurements and GNSS
  * measurements with nonlinear modeling.
  */
-class ExtendedKalmanFilter : public Filter {
+class ExtendedKalmanFilter final: public Filter {
 public:
   /**
    * @brief Constructor of Extended Kalman Filter.
    *
+   * @param delta_t sampling period
    * @param x0 initial state
    * @param P0 initial covariance matrix
-   * @param delta_t sampling period
    */
   explicit ExtendedKalmanFilter(const double& delta_t, const StateVector& x0, const StateCovarianceMatrix& P0);
 
 
   /**
-   * @brief Virtual destructor.
+   * @brief Destructor.
    */
-  ~ExtendedKalmanFilter() override = default;
+  ~ExtendedKalmanFilter() = default;
 
   /**
    * @brief Performs prediction step for Extended Kalman Filter.

@@ -10,9 +10,9 @@ namespace msf_localization_core {
 /**
  * @brief Constructor of Extended Kalman Filter.
  *
+ * @param delta_t sampling period
  * @param x0 initial state
  * @param P0 initial covariance matrix
- * @param delta_t sampling period
  */
 ExtendedKalmanFilter::ExtendedKalmanFilter(const double &delta_t,
                                            const StateVector &x0,

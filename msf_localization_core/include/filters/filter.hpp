@@ -5,12 +5,7 @@
 namespace msf_localization_core {
 
 /**
- * @brief Abstract class for Kalman Filters used for state estimation.
- *
- *
- * @note This class is independent of ROS2 and depends on Eigen for matrix
- * operations and GeographicLib for Geodetic to Geocentric conversions vice
- * versa.
+ * @brief Abstract class for Kalman Filters used for State Estimation.
  */
 class Filter {
 public:
@@ -48,14 +43,14 @@ public:
   /**
    * @brief Performs prediction step for Kalman Filters.
    *
-   * @param imu IMU measurement.
+   * @param u IMU measurement.
    */
   virtual void predict(const ControlVector &u) = 0;
 
   /**
    * @brief Performs update step for Bayes Filters.
    *
-   * @param gnss GNSS position measurement.
+   * @param y GNSS position measurement.
    */
   virtual void update(const MeasurementVector &y) = 0;
 
